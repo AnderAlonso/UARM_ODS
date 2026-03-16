@@ -18,11 +18,16 @@ html{font-size:16px;scroll-behavior:smooth}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
 /* HEADER */
-.hdr{background:var(--navy);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
-.hdr-logo{font-size:20px;font-weight:800;letter-spacing:-.5px}
+.hdr{background:var(--navy);color:#fff;padding:10px 20px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.hdr-left{display:flex;align-items:center}
+.hdr-logo{font-size:20px;font-weight:800;letter-spacing:-.5px;text-align:center}
 .hdr-logo span{color:var(--gold)}
-.hdr-sub{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
-.hdr-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:var(--gold-l)}
+.hdr-right{display:flex;align-items:center;justify-content:flex-end}
+.hdr-img{height:52px;width:auto;object-fit:contain;display:block}
+.hdr-img-right{height:48px;width:auto;object-fit:contain;display:block}
+
+/* FOOTER */
+.ftr{background:var(--navy);color:rgba(255,255,255,.65);text-align:center;padding:14px 20px;font-size:12px;line-height:1.5;margin-top:40px;border-top:1px solid rgba(255,255,255,.1)}
 
 /* PROGRESS */
 .prog-wrap{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;overflow-x:auto}
@@ -255,14 +260,23 @@ function render(){
 }
 
 function html(){
-  return hdr() + (S.step>0&&S.step<5?prog():'') + `<div class="main">${body()}</div>` + (S.step>0&&S.step<5?nav():'');
+  return hdr() + (S.step>0&&S.step<5?prog():'') + `<div class="main">${body()}</div>` + (S.step>0&&S.step<5?nav():'') + ftr();
 }
 
 function hdr(){
   return `<header class="hdr">
-    <div><div class="hdr-logo">ODS <span>en la</span> UARM</div><div class="hdr-sub">Universidad Antonio Ruiz de Montoya</div></div>
-    <div class="hdr-badge">Período ${SEMESTRE}</div>
+    <div class="hdr-left">
+      <img class="hdr-img" src="https://obepe.org/wp-content/uploads/2026/03/LOGO-ASOCIADO-UARM-A-LA-CATEDRA-v-24_small.png" alt="UARM – Asociado a la Cátedra">
+    </div>
+    <div class="hdr-logo">ODS <span>en la</span> UARM</div>
+    <div class="hdr-right">
+      <img class="hdr-img-right" src="https://obepe.org/wp-content/uploads/2026/03/Logo-Catedra-UNESCO.png" alt="Cátedra UNESCO">
+    </div>
   </header>`;
+}
+
+function ftr(){
+  return `<footer class="ftr">Diseñado por <strong style="color:rgba(255,255,255,.85)">Ander Alonso-Pastor</strong>. Coordinador de la Cátedra UNESCO en Políticas Educativas y Agenda 2030</footer>`;
 }
 
 function prog(){
@@ -309,9 +323,9 @@ function welcome(){
       <div class="card-sub">4 pasos para completar tu mapeo de curso.</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:28px">
         ${[['👤','Identificación','Selecciona tu facultad, tu nombre y el curso a mapear.'],
-           ['🌐','Mapeo ODS','Puntúa del 1 al 5 cada uno de los 17 ODS según la relación con tu curso.'],
+           ['🌐','Mapeo ODS','Puntúa del 0 al 5 cada uno de los 17 ODS según la relación con tu curso.'],
            ['✨','Mapeo PAU','Evalúa las 4 Prioridades Apostólicas Universales.'],
-           ['📤','Envío','Revisa y envía. Los datos se guardan automáticamente.']]
+           ['📤','Envío','Revisa y envía. Los datos se guardan automáticamente en Google Sheets.']]
           .map(([icon,t,d])=>`<div style="background:#f8f9fc;border-radius:10px;padding:16px"><div style="font-size:26px;margin-bottom:8px">${icon}</div><div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:4px">${t}</div><div style="font-size:12px;color:var(--muted);line-height:1.5">${d}</div></div>`).join('')}
       </div>
       <div style="text-align:center">
@@ -366,7 +380,7 @@ function odsStep(){
   const active = Object.values(S.ods).filter(v=>v>0).length;
   return `<div class="card">
     <div class="card-title">Mapeo de ODS</div>
-    <div class="card-sub">Evalúa del <strong>0 al 5</strong> la relación de tu curso con cada ODS. <strong>0</strong> = ninguna relación · <strong>5</strong> = relación muy directa. Debes puntuar los 17 ODS.</div>
+    <div class="card-sub">Evalúa del <strong>0 al 5</strong> la relación de tu curso con cada ODS. <strong>0</strong> = ninguna relación · <strong>5</strong> = relación muy directa. Debes puntuar los 17 ODS (0 es válido).</div>
     <div class="chips">
       <span class="chip">🎯 ${active} ODS con puntuación > 0</span>
       <span class="chip">Suma total: ${Object.values(S.ods).reduce((a,b)=>a+b,0)}</span>
