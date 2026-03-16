@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard ODS – UARM</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root {
+  --navy:#1B3A5C; --navy-l:#2a5080; --gold:#C8A84B; --gold-l:#e8c96b;
+  --bg:#F4F6FA; --card:#fff; --text:#1e2d3d; --muted:#6b7a8d; --border:#dde3ec;
+  --green:#2ECC71; --red:#e53935; --radius:14px;
+  --sh:0 4px 20px rgba(27,58,92,.10); --sh-lg:0 8px 40px rgba(27,58,92,.16);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:var(--navy);color:#fff;padding:10px 20px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.hdr-left{display:flex;align-items:center}
+.hdr-logo{font-size:18px;font-weight:800;letter-spacing:-.5px;text-align:center;color:#fff}
+.hdr-logo span{color:var(--gold)}
+.hdr-right{display:flex;align-items:center;justify-content:flex-end}
+.hdr-img{height:52px;width:auto;object-fit:contain}
+.hdr-img-right{height:48px;width:auto;object-fit:contain}
+.filter-bar{background:#fff;border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:73px;z-index:90}
+.filter-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.filter-chips{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.fchip{padding:5px 13px;border-radius:20px;border:2px solid var(--border);background:#fff;color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.fchip:hover{border-color:var(--navy);color:var(--navy)}
+.fchip.active{background:var(--navy);border-color:var(--navy);color:#fff}
+.filter-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.last-upd{font-size:11px;color:var(--muted)}
+.btn-refresh{padding:6px 12px;background:transparent;border:2px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-refresh:hover{border-color:var(--navy);color:var(--navy)}
+.main{max-width:1100px;margin:0 auto;padding:24px 18px 40px;flex:1;width:100%}
+.state-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px;text-align:center;gap:14px}
+.state-icon{font-size:52px}
+.state-title{font-size:20px;font-weight:800;color:var(--navy)}
+.state-sub{font-size:14px;color:var(--muted);max-width:480px;line-height:1.6}
+.spinner-lg{width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn-retry{padding:10px 22px;background:var(--navy);color:#fff;border:none;border-radius:9px;font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;cursor:pointer;margin-top:4px}
+.btn-retry:hover{background:var(--navy-l)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
+.kpi{background:var(--card);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--sh);border:1px solid var(--border);position:relative;overflow:hidden;animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.k1::before{background:var(--navy)}.kpi.k2::before{background:var(--green)}.kpi.k3::before{background:var(--gold)}.kpi.k4::before{background:#7B3F00}
+.kpi-icon{font-size:22px;margin-bottom:6px}
+.kpi-val{font-size:32px;font-weight:800;color:var(--navy);line-height:1}
+.kpi-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:5px}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+@media(max-width:720px){.grid-2{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:var(--radius);padding:22px;box-shadow:var(--sh);border:1px solid var(--border);animation:fadeUp .35s ease}
+.card-title{font-size:13px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid var(--border);padding-bottom:10px;margin-bottom:16px}
+.card-full{margin-bottom:18px}
+.rank-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;padding-right:4px}
+.rank-list::-webkit-scrollbar{width:4px}
+.rank-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.rank-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:9px;background:#f8f9fc;transition:background .2s}
+.rank-item:hover{background:#edf1f7}
+.rank-pos{font-size:11px;font-weight:800;color:var(--muted);min-width:18px;text-align:center}
+.rank-img{width:26px;height:26px;border-radius:4px;object-fit:cover;flex-shrink:0}
+.rank-name{font-size:12px;font-weight:700;color:var(--text);flex:1;line-height:1.3}
+.rank-pilar{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:8px;text-transform:uppercase;margin-left:4px}
+.rank-bar-wrap{width:80px;height:7px;background:var(--border);border-radius:4px;overflow:hidden;flex-shrink:0}
+.rank-bar{height:100%;border-radius:4px;transition:width .6s ease}
+.rank-score{font-size:14px;font-weight:800;min-width:28px;text-align:right}
+.heatmap-wrap{overflow-x:auto;margin-top:4px}
+.heatmap{border-collapse:collapse;width:100%;font-size:11px}
+.heatmap th{padding:6px 4px;text-align:left;font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;border-bottom:2px solid var(--border);background:#fff}
+.heatmap th.ods-col{text-align:center;min-width:46px}
+.heatmap td{padding:4px 3px;border-bottom:1px solid var(--border);vertical-align:middle}
+.heatmap td.fac-name{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;padding-right:10px;max-width:170px;overflow:hidden;text-overflow:ellipsis}
+.hm-cell{width:38px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin:0 auto;cursor:default;transition:transform .15s}
+.hm-cell:hover{transform:scale(1.2)}
+.hm-0{background:#f0f3f8;color:#ccc}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-left">
+    <img class="hdr-img" src="https://obepe.org/wp-content/uploads/2026/03/LOGO-ASOCIADO-UARM-A-LA-CATEDRA-v-24-white-small.png" alt="UARM">
+  </div>
+  <div class="hdr-logo">Dashboard <span>ODS</span> UARM</div>
+  <div class="hdr-right">
+    <img class="hdr-img-right" src="https://obepe.org/wp-content/uploads/2026/03/Logo-Catedra-UNESCO-blanco.png" alt="Cátedra UNESCO">
+  </div>
+</header>
+
+<div class="filter-bar" id="filterBar" style="display:none">
+  <span class="filter-label">🏛 Facultad</span>
+  <div class="filter-chips" id="filterChips"></div>
+  <div class="filter-right">
+    <span class="last-upd" id="lastUpd"></span>
+    <button class="btn-refresh" onclick="loadData()">↺ Actualizar</button>
+  </div>
+</div>
+
+<div class="main" id="mainArea">
+  <div class="state-screen" id="stateScreen">
+    <div class="spinner-lg"></div>
+    <div class="state-title">Cargando datos…</div>
+    <div class="state-sub">Leyendo el Google Sheet de mapeos ODS.</div>
+  </div>
+  <div id="dashContent" style="display:none"></div>
+</div>
+
+<footer style="background:var(--navy);color:rgba(255,255,255,.65);text-align:center;padding:14px 20px;font-size:12px;line-height:1.5;border-top:1px solid rgba(255,255,255,.1)">
+  Diseñado por <strong style="color:rgba(255,255,255,.85)">Ander Alonso-Pastor</strong>. Coordinador de la Cátedra UNESCO en Políticas Educativas y Agenda 2030
+</footer>
+
+<script>
+const SHEET_ID  = '1b6ZGFfLkadUoTEhL7RBxRyfsSYR0Fb5IdUAykMCa8uA';
+const SHEET_GID = '0';
+const CSV_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
+
+const ODS = [
+  {id:1,  n:'Fin de la pobreza',                        p:'Sociedad', c:'#E5243B', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-01.png'},
+  {id:2,  n:'Hambre cero',                              p:'Sociedad', c:'#DDA63A', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-02.png'},
+  {id:3,  n:'Salud y bienestar',                        p:'Sociedad', c:'#4C9F38', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-03.png'},
+  {id:4,  n:'Educación de calidad',                     p:'Sociedad', c:'#C5192D', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-04.png'},
+  {id:5,  n:'Igualdad de género',                       p:'Sociedad', c:'#FF3A21', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-05.png'},
+  {id:6,  n:'Agua limpia y saneamiento',                p:'Biosfera', c:'#26BDE2', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-06.png'},
+  {id:7,  n:'Energía asequible y no contaminante',      p:'Sociedad', c:'#FCC30B', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-07.png'},
+  {id:8,  n:'Trabajo decente y crecimiento económico',  p:'Economía', c:'#A21942', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-08.png'},
+  {id:9,  n:'Industria, innovación e infraestructura',  p:'Economía', c:'#FD6925', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-09.png'},
+  {id:10, n:'Reducción de las desigualdades',           p:'Economía', c:'#DD1367', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-10.png'},
+  {id:11, n:'Ciudades y comunidades sostenibles',       p:'Sociedad', c:'#FD9D24', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-11.png'},
+  {id:12, n:'Producción y consumo responsables',        p:'Economía', c:'#BF8B2E', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-12.png'},
+  {id:13, n:'Acción por el clima',                      p:'Biosfera', c:'#3F7E44', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-13.png'},
+  {id:14, n:'Vida submarina',                           p:'Biosfera', c:'#0A97D9', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-14.png'},
+  {id:15, n:'Vida de ecosistemas terrestres',           p:'Biosfera', c:'#56C02B', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-15.png'},
+  {id:16, n:'Paz, justicia e instituciones sólidas',    p:'Sociedad', c:'#00689D', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-16.png'},
+  {id:17, n:'Alianzas para lograr los objetivos',       p:'Economía', c:'#19486A', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-17.png'},
+];
+const PAU = [
+  {id:1, n:'Mostrar el camino hacia Dios',      icon:'✨', color:'#7B3F00'},
+  {id:2, n:'Caminar con los excluidos',          icon:'🤝', color:'#1a3c5e'},
+  {id:3, n:'Acompañar a los jóvenes en camino', icon:'🌱', color:'#2d6a1f'},
+  {id:4, n:'Cuidar de nuestra casa común',       icon:'🌍', color:'#0a5c8c'},
+];
+const PILARES = [
+  {label:'Sociedad', color:'#1a6fab', ids:ODS.filter(o=>o.p==='Sociedad').map(o=>o.id)},
+  {label:'Biosfera', color:'#2d6a1f', ids:ODS.filter(o=>o.p==='Biosfera').map(o=>o.id)},
+  {label:'Economía', color:'#8a4f00', ids:ODS.filter(o=>o.p==='Economía').map(o=>o.id)},
+];
+
+let allRows=[], cols={}, filterFac='', charts={};
+
+function detectCols(fields){
+  const c={ods:{},pau:{}};
+  fields.forEach(f=>{
+    const fl=f.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if(/facultad|departamento/.test(fl)) c.facultad=f;
+    if(/docente|profesor/.test(fl))      c.docente=f;
+    if(/correo|email/.test(fl))          c.correo=f;
+    if(/curso|asignatura/.test(fl)&&!/carrera|cod/.test(fl)) c.curso=f;
+    if(/carrera/.test(fl))               c.carrera=f;
+    if(/semestre|periodo/.test(fl))      c.semestre=f;
+    const om=f.match(/ODS[_\s\-\[]*0?(\d+)/i); if(om){const n=parseInt(om[1]);if(n>=1&&n<=17)c.ods[n]=f;}
+    const pm=f.match(/PAU[_\s\-\[]*0?(\d+)/i); if(pm){const n=parseInt(pm[1]);if(n>=1&&n<=4)c.pau[n]=f;}
+  });
+  return c;
+}
+function colsOk(c){return c.facultad&&Object.keys(c.ods).length>=17&&Object.keys(c.pau).length>=4;}
+
+function loadData(){
+  showLoading();
+  Papa.parse(CSV_URL,{
+    download:true,header:true,skipEmptyLines:true,
+    complete(res){
+      if(!res.data||res.data.length===0) return showError('El Sheet no tiene datos o no es accesible.<br><small>Verifica que está compartido como "Cualquiera con el enlace puede ver".</small>');
+      const detected=detectCols(res.meta.fields||[]);
+      if(!colsOk(detected)) return showError('No se detectaron todas las columnas ODS/PAU.<br><small>Columnas: '+(res.meta.fields||[]).join(', ')+'</small>');
+      cols=detected; allRows=res.data; filterFac='';
+      document.getElementById('lastUpd').textContent='Actualizado: '+new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+      buildFilters(); renderDash();
+    },
+    error(err){showError('Error al leer el Sheet: '+err.message+'<br><small>Verifica que el Sheet es público.</small>');}
+  });
+}
+
+function rows(){return filterFac?allRows.filter(r=>(r[cols.facultad]||'').trim()===filterFac):allRows;}
+function odsAvg(rws){const res={};ODS.forEach(o=>{const vs=rws.map(r=>parseFloat(r[cols.ods[o.id]]||0)).filter(v=>!isNaN(v)&&v>0);res[o.id]=vs.length?parseFloat((vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(2)):0;});return res;}
+function pauAvg(rws){const res={};PAU.forEach(p=>{const vs=rws.map(r=>parseFloat(r[cols.pau[p.id]]||0)).filter(v=>!isNaN(v)&&v>0);res[p.id]=vs.length?parseFloat((vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(2)):0;});return res;}
+function pilarAvg(rws){return PILARES.map(p=>{const vs=[];p.ids.forEach(id=>rws.forEach(r=>{const v=parseFloat(r[cols.ods[id]]||0);if(!isNaN(v)&&v>0)vs.push(v);}));return{...p,avg:vs.length?parseFloat((vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(2)):0};});}
+function faculties(){return[...new Set(allRows.map(r=>(r[cols.facultad]||'').trim()).filter(Boolean))].sort();}
+function uniqDocs(rws){return new Set(rws.map(r=>(r[cols.correo]||r[cols.docente]||'').trim()).filter(Boolean)).size;}
+function hex2rgba(h,a){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return `rgba(${r},${g},${b},${a})`;}
+function killChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function buildFilters(){
+  const bar=document.getElementById('filterBar');
+  const chips=document.getElementById('filterChips');
+  bar.style.display='flex';
+  chips.innerHTML=chipBtn('Todas','',!filterFac);
+  faculties().forEach(f=>chips.innerHTML+=chipBtn(f,f,filterFac===f));
+}
+function chipBtn(label,val,active){return `<button class="fchip${active?' active':''}" onclick="setFilter(${JSON.stringify(val)})">${label}</button>`;}
+function setFilter(fac){filterFac=fac;buildFilters();renderDash();}
+
+function renderDash(){
+  const rws=rows(), avgs=odsAvg(rws), pavgs=pauAvg(rws);
+  const sorted=ODS.slice().sort((a,b)=>avgs[b.id]-avgs[a.id]);
+  const topODS=sorted[0];
+  ['radar','pilares','pau','facComp'].forEach(killChart);
+
+  const el=document.getElementById('dashContent');
+  document.getElementById('stateScreen').style.display='none';
+  el.style.display='block';
+
+  el.innerHTML=`
+    <div class="kpi-row">
+      <div class="kpi k1"><div class="kpi-icon">📋</div><div class="kpi-val">${rws.length}</div><div class="kpi-label">Mapeos enviados</div><div class="kpi-sub">${filterFac||'en total'}</div></div>
+      <div class="kpi k2"><div class="kpi-icon">👩‍🏫</div><div class="kpi-val">${uniqDocs(rws)}</div><div class="kpi-label">Docentes</div><div class="kpi-sub">participantes</div></div>
+      <div class="kpi k3"><div class="kpi-icon">🏛</div><div class="kpi-val">${filterFac?'1':faculties().length}</div><div class="kpi-label">Facultades</div><div class="kpi-sub">${filterFac||'representadas'}</div></div>
+      <div class="kpi k4"><div class="kpi-icon"><img src="${topODS.img}" style="width:22px;height:22px;border-radius:4px;vertical-align:middle"></div><div class="kpi-val" style="color:${topODS.c}">ODS ${topODS.id}</div><div class="kpi-label">Más puntuado</div><div class="kpi-sub">Prom. ${avgs[topODS.id].toFixed(2)}</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🌐 Radar ODS — promedio global</div><canvas id="cRadar" height="320"></canvas></div>
+      <div class="card"><div class="card-title">🏆 Ranking ODS</div><div class="rank-list" id="rankList"></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">📐 Promedio por Pilar</div><canvas id="cPilares" height="200"></canvas></div>
+      <div class="card"><div class="card-title">✨ Prioridades Apostólicas (PAU)</div><canvas id="cPAU" height="200"></canvas></div>
+    </div>
+    ${!filterFac&&faculties().length>1?`
+    <div class="card card-full">
+      <div class="card-title">🔥 Mapa de calor — ODS × Facultad <span style="font-size:10px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:8px">promedio de puntuaciones activas</span></div>
+      <div class="heatmap-wrap"><table class="heatmap" id="hmTable"></table></div>
+    </div>`:''}
+    ${filterFac?`
+    <div class="card card-full">
+      <div class="card-title">📊 ${filterFac} vs. Promedio global — ODS</div>
+      <canvas id="cFacComp" height="160"></canvas>
+    </div>`:''}
+  `;
+
+  initRadar(avgs); initRanking(avgs,sorted); initPilares(rws); initPAU(pavgs);
+  if(!filterFac&&faculties().length>1) initHeatmap();
+  if(filterFac) initFacComp(avgs);
+}
+
+function initRadar(avgs){
+  const scored=ODS.filter(o=>avgs[o.id]>0); if(scored.length<3)return;
+  charts.radar=new Chart(document.getElementById('cRadar'),{type:'radar',data:{labels:scored.map(o=>o.id+'. '+(o.n.length>22?o.n.slice(0,22)+'…':o.n)),datasets:[{data:scored.map(o=>avgs[o.id]),backgroundColor:'rgba(27,58,92,0.12)',borderColor:'#1B3A5C',borderWidth:2,pointBackgroundColor:scored.map(o=>o.c),pointRadius:5}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:5,ticks:{stepSize:1,font:{size:9},backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}});
+}
+
+function initRanking(avgs,sorted){
+  const max=Math.max(...sorted.map(o=>avgs[o.id]),0.01);
+  const pc=p=>p==='Sociedad'?'#1a6fab':p==='Biosfera'?'#2d6a1f':'#8a4f00';
+  document.getElementById('rankList').innerHTML=sorted.map((o,i)=>`
+    <div class="rank-item">
+      <span class="rank-pos">${i+1}</span>
+      <img class="rank-img" src="${o.img}" alt="ODS ${o.id}">
+      <span class="rank-name">${o.n}<span class="rank-pilar" style="background:${pc(o.p)}22;color:${pc(o.p)}">${o.p}</span></span>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${(avgs[o.id]/max*100).toFixed(0)}%;background:${o.c}"></div></div>
+      <span class="rank-score" style="color:${avgs[o.id]>0?o.c:'#ccc'}">${avgs[o.id].toFixed(2)}</span>
+    </div>`).join('');
+}
+
+function initPilares(rws){
+  const data=pilarAvg(rws);
+  charts.pilares=new Chart(document.getElementById('cPilares'),{type:'bar',data:{labels:data.map(p=>p.label),datasets:[{data:data.map(p=>p.avg),backgroundColor:data.map(p=>hex2rgba(p.color,.18)),borderColor:data.map(p=>p.color),borderWidth:2,borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:11}}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' Promedio: '+ctx.raw.toFixed(2)}}}}});
+}
+
+function initPAU(pavgs){
+  charts.pau=new Chart(document.getElementById('cPAU'),{type:'bar',data:{labels:PAU.map(p=>p.icon+' '+(p.n.length>28?p.n.slice(0,28)+'…':p.n)),datasets:[{data:PAU.map(p=>pavgs[p.id]),backgroundColor:PAU.map(p=>hex2rgba(p.color,.18)),borderColor:PAU.map(p=>p.color),borderWidth:2,borderRadius:8}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{min:0,max:5,ticks:{stepSize:1,font:{size:11}}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' Promedio: '+ctx.raw.toFixed(2)}}}}});
+}
+
+function initHeatmap(){
+  const facs=faculties();
+  const facAvgs=Object.fromEntries(facs.map(f=>[f,odsAvg(allRows.filter(r=>(r[cols.facultad]||'').trim()===f))]));
+  const tbl=document.getElementById('hmTable'); if(!tbl)return;
+  let html=`<thead><tr><th>Facultad</th>${ODS.map(o=>`<th class="ods-col" title="ODS ${o.id}: ${o.n}"><img src="${o.img}" style="width:20px;height:20px;border-radius:3px;display:block;margin:0 auto 2px"><span style="font-size:9px">${o.id}</span></th>`).join('')}</tr></thead><tbody>`;
+  facs.forEach(f=>{
+    const cnt=allRows.filter(r=>(r[cols.facultad]||'').trim()===f).length;
+    html+=`<tr><td class="fac-name" title="${f}">${f} <span style="color:var(--muted);font-weight:400">(${cnt})</span></td>${ODS.map(o=>{const v=facAvgs[f][o.id];if(!v)return`<td><div class="hm-cell hm-0" title="Sin datos">–</div></td>`;const op=0.12+(v/5)*0.72;return`<td><div class="hm-cell" style="background:${hex2rgba(o.c,op)};color:${v>=2.5?o.c:'#888'}" title="ODS ${o.id} · ${f}: ${v.toFixed(2)}">${v.toFixed(1)}</div></td>`;}).join('')}</tr>`;
+  });
+  tbl.innerHTML=html+'</tbody>';
+}
+
+function initFacComp(facAvgs){
+  const globalAvgs=odsAvg(allRows);
+  charts.facComp=new Chart(document.getElementById('cFacComp'),{type:'bar',data:{labels:ODS.map(o=>'ODS '+o.id),datasets:[{label:filterFac,data:ODS.map(o=>facAvgs[o.id]),backgroundColor:ODS.map(o=>hex2rgba(o.c,.65)),borderColor:ODS.map(o=>o.c),borderWidth:1,borderRadius:4},{label:'Promedio global',data:ODS.map(o=>globalAvgs[o.id]),type:'line',tension:0.35,borderColor:'#1B3A5C',borderWidth:2,backgroundColor:'rgba(27,58,92,.06)',pointBackgroundColor:'#1B3A5C',pointRadius:3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}}},x:{ticks:{font:{size:10}}}},plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:16}},tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+parseFloat(ctx.raw||0).toFixed(2)}}}}});
+}
+
+function showLoading(){
+  document.getElementById('dashContent').style.display='none';
+  document.getElementById('filterBar').style.display='none';
+  const s=document.getElementById('stateScreen');
+  s.style.display='flex';
+  s.innerHTML='<div class="spinner-lg"></div><div class="state-title">Cargando datos…</div><div class="state-sub">Leyendo el Google Sheet de mapeos ODS.</div>';
+}
+function showError(msg){
+  const s=document.getElementById('stateScreen');
+  s.style.display='flex';
+  s.innerHTML=`<div class="state-icon">⚠️</div><div class="state-title">No se pudieron cargar los datos</div><div class="state-sub">${msg}</div><button class="btn-retry" onclick="loadData()">↺ Reintentar</button>`;
+}
+
+loadData();
+</script>
+</body>
+</html>
