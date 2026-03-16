@@ -276,7 +276,7 @@ function hdr(){
 }
 
 function ftr(){
-  return `<footer class="ftr">Diseñado por <strong style="color:rgba(255,255,255,.85)">Ander Alonso-Pastor</strong>. Coordinador de la Cátedra UNESCO en Políticas Educativas y Agenda 2030</footer>`;
+  return `<footer class="ftr">Diseñado por <strong style="color:rgba(255,255,255,.85)">Ander Alonso-Pastor</strong>. <br> Coordinador de la Cátedra UNESCO en Políticas Educativas y Agenda 2030</footer>`;
 }
 
 function prog(){
@@ -323,9 +323,9 @@ function welcome(){
       <div class="card-sub">4 pasos para completar tu mapeo de curso.</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:28px">
         ${[['👤','Identificación','Selecciona tu facultad, tu nombre y el curso a mapear.'],
-           ['🌐','Mapeo ODS','Puntúa del 0 al 5 cada uno de los 17 ODS según la relación con tu curso.'],
+           ['🌐','Mapeo ODS','Puntúa del 1 al 5 cada uno de los 17 ODS según la relación con tu curso.'],
            ['✨','Mapeo PAU','Evalúa las 4 Prioridades Apostólicas Universales.'],
-           ['📤','Envío','Revisa y envía. Los datos se guardan automáticamente en Google Sheets.']]
+           ['📤','Envío','Revisa y envía. Los datos se guardan automáticamente.']]
           .map(([icon,t,d])=>`<div style="background:#f8f9fc;border-radius:10px;padding:16px"><div style="font-size:26px;margin-bottom:8px">${icon}</div><div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:4px">${t}</div><div style="font-size:12px;color:var(--muted);line-height:1.5">${d}</div></div>`).join('')}
       </div>
       <div style="text-align:center">
@@ -380,7 +380,7 @@ function odsStep(){
   const active = Object.values(S.ods).filter(v=>v>0).length;
   return `<div class="card">
     <div class="card-title">Mapeo de ODS</div>
-    <div class="card-sub">Evalúa del <strong>0 al 5</strong> la relación de tu curso con cada ODS. <strong>0</strong> = ninguna relación · <strong>5</strong> = relación muy directa. Debes puntuar los 17 ODS (0 es válido).</div>
+    <div class="card-sub">Evalúa del <strong>1 al 5</strong> la relación de tu curso con cada ODS. <strong>0</strong> = ninguna relación · <strong>5</strong> = relación muy directa. Debes puntuar los 17 ODS (0 es válido).</div>
     <div class="chips">
       <span class="chip">🎯 ${active} ODS con puntuación > 0</span>
       <span class="chip">Suma total: ${Object.values(S.ods).reduce((a,b)=>a+b,0)}</span>
@@ -414,7 +414,7 @@ function odsCard(o){
 function pausStep(){
   return `<div class="card">
     <div class="card-title">Mapeo de PAU</div>
-    <div class="card-sub">Evalúa del <strong>0 al 5</strong> cómo tu curso contribuye a cada Prioridad Apostólica Universal. (Opcional)</div>
+    <div class="card-sub">Evalúa del <strong>1 al 5</strong> cómo tu curso contribuye a cada Prioridad Apostólica Universal. (Opcional)</div>
     <div class="pau-grid">${PAU.map(pauCard).join('')}</div>
     <div style="margin-top:20px">
       <label class="fl">Comentario / Justificación (opcional)</label>
