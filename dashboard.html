@@ -226,8 +226,8 @@ function renderDash(){
       <div class="card"><div class="card-title">🏆 Ranking ODS</div><div class="rank-list" id="rankList"></div></div>
     </div>
     <div class="grid-2">
-      <div class="card"><div class="card-title">📐 Promedio por Pilar</div><canvas id="cPilares" height="200"></canvas></div>
-      <div class="card"><div class="card-title">✨ Prioridades Apostólicas (PAU)</div><canvas id="cPAU" height="200"></canvas></div>
+      <div class="card"><div class="card-title">📐 Promedio por Pilar</div><div style="position:relative;height:200px"><canvas id="cPilares"></canvas></div></div>
+      <div class="card"><div class="card-title">✨ Prioridades Apostólicas (PAU)</div><div style="position:relative;height:200px"><canvas id="cPAU"></canvas></div></div>
     </div>
     ${!filterFac&&faculties().length>1?`
     <div class="card card-full">
@@ -237,7 +237,7 @@ function renderDash(){
     ${filterFac?`
     <div class="card card-full">
       <div class="card-title">📊 ${filterFac} vs. Promedio global — ODS</div>
-      <canvas id="cFacComp" height="160"></canvas>
+      <div style="position:relative;height:160px"><canvas id="cFacComp"></canvas></div>
     </div>`:''}
   `;
 
