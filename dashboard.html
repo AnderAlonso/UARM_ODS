@@ -222,7 +222,7 @@ function renderDash(){
       <div class="kpi k4"><div class="kpi-icon"><img src="${topODS.img}" style="width:22px;height:22px;border-radius:4px;vertical-align:middle"></div><div class="kpi-val" style="color:${topODS.c}">ODS ${topODS.id}</div><div class="kpi-label">Más puntuado</div><div class="kpi-sub">Prom. ${avgs[topODS.id].toFixed(2)}</div></div>
     </div>
     <div class="grid-2">
-      <div class="card"><div class="card-title">🌐 Radar ODS — promedio global</div><canvas id="cRadar" height="320"></canvas></div>
+      <div class="card"><div class="card-title">🌐 Radar ODS — promedio global</div><div style="position:relative;height:320px"><canvas id="cRadar"></canvas></div></div>
       <div class="card"><div class="card-title">🏆 Ranking ODS</div><div class="rank-list" id="rankList"></div></div>
     </div>
     <div class="grid-2">
