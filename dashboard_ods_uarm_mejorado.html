@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard ODS – UARM</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{
+  --navy:#17395C;
+  --navy-l:#234C79;
+  --gold:#C8A84B;
+  --gold-l:#E3C96F;
+  --bg:#F4F7FB;
+  --bg-soft:#F8FAFD;
+  --card:#FFFFFF;
+  --text:#1F2937;
+  --muted:#6B7280;
+  --border:#E6EBF2;
+  --green:#2E9E5B;
+  --red:#E53935;
+  --radius:18px;
+  --radius-sm:12px;
+  --sh:0 8px 24px rgba(23,57,92,.08);
+  --sh-lg:0 14px 38px rgba(23,57,92,.14);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{
+  font-family:'Outfit',sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(200,168,75,.06), transparent 22%),
+    radial-gradient(circle at top right, rgba(23,57,92,.06), transparent 24%),
+    var(--bg);
+  color:var(--text);
+  min-height:100vh;
+}
+.hdr{
+  background:linear-gradient(90deg, var(--navy) 0%, #1D456E 100%);
+  color:#fff;
+  padding:14px 24px;
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:16px;
+  position:sticky;
+  top:0;
+  z-index:100;
+  box-shadow:0 6px 22px rgba(0,0,0,.18);
+}
+.hdr-left,.hdr-right{display:flex;align-items:center}
+.hdr-right{justify-content:flex-end}
+.hdr-logo{font-size:24px;font-weight:800;letter-spacing:-.04em;text-align:center;color:#fff}
+.hdr-logo span{color:var(--gold-l)}
+.hdr-img{height:56px;width:auto;object-fit:contain}
+.hdr-img-right{height:52px;width:auto;object-fit:contain}
+.filter-bar{
+  background:rgba(255,255,255,.90);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  padding:14px 24px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+  position:sticky;
+  top:84px;
+  z-index:90;
+}
+.filter-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+.filter-chips{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+.fchip{
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:#fff;
+  color:var(--navy);
+  font-family:'Outfit',sans-serif;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .2s ease;
+}
+.fchip:hover{border-color:var(--navy);transform:translateY(-1px);box-shadow:0 4px 12px rgba(23,57,92,.08)}
+.fchip.active{background:var(--navy);border-color:var(--navy);color:#fff}
+.filter-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.last-upd{font-size:12px;color:var(--muted);font-weight:600}
+.btn-refresh{
+  padding:9px 14px;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:10px;
+  color:var(--navy);
+  font-family:'Outfit',sans-serif;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+  transition:all .2s ease;
+}
+.btn-refresh:hover{border-color:var(--navy);background:#F8FBFF}
+.main{max-width:1220px;margin:0 auto;padding:28px 20px 44px;width:100%}
+.state-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:420px;text-align:center;gap:14px}
+.state-icon{font-size:52px}
+.state-title{font-size:22px;font-weight:800;color:var(--navy);letter-spacing:-.02em}
+.state-sub{font-size:14px;color:var(--muted);max-width:520px;line-height:1.65}
+.spinner-lg{width:52px;height:52px;border:4px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn-retry{padding:11px 22px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;cursor:pointer;margin-top:4px}
+.btn-retry:hover{background:var(--navy-l)}
+.hero-card{
+  background:linear-gradient(135deg, rgba(23,57,92,.97), rgba(35,76,121,.92));
+  color:#fff;
+  border-radius:22px;
+  box-shadow:var(--sh-lg);
+  padding:26px 26px 24px;
+  margin-bottom:22px;
+  position:relative;
+  overflow:hidden;
+}
+.hero-card::after{
+  content:'';
+  position:absolute;
+  right:-40px;
+  top:-40px;
+  width:180px;
+  height:180px;
+  background:radial-gradient(circle, rgba(227,201,111,.26), transparent 65%);
+}
+.hero-kicker{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.74);margin-bottom:8px}
+.hero-title{font-size:28px;font-weight:800;letter-spacing:-.04em;line-height:1.1;max-width:760px}
+.hero-sub{margin-top:10px;font-size:14px;line-height:1.65;color:rgba(255,255,255,.82);max-width:780px}
+.hero-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.hero-pill{font-size:12px;font-weight:700;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.12);color:#fff}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-bottom:24px}
+.kpi{background:linear-gradient(180deg,#fff 0%,#FCFDFE 100%);border-radius:20px;padding:22px 22px 20px;box-shadow:var(--sh);border:1px solid var(--border);position:relative;overflow:hidden;animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:5px}
+.kpi.k1::before{background:var(--navy)}
+.kpi.k2::before{background:var(--green)}
+.kpi.k3::before{background:var(--gold)}
+.kpi.k4::before{background:#8A5A2B}
+.kpi-icon{font-size:22px;margin-bottom:10px}
+.kpi-val{font-size:40px;font-weight:800;color:var(--navy);line-height:1;letter-spacing:-.04em}
+.kpi-label{font-size:11px;font-weight:800;color:#4B5563;text-transform:uppercase;letter-spacing:.08em;margin-top:8px}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:5px}
+.insight-row{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:22px}
+.insight{background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--sh);padding:18px 18px 16px}
+.insight-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.insight-value{font-size:17px;font-weight:800;color:var(--navy);margin-top:8px;line-height:1.25}
+.insight-sub{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5}
+.grid-2{display:grid;grid-template-columns:1.08fr .92fr;gap:18px;margin-bottom:18px}
+@media(max-width:900px){.grid-2{grid-template-columns:1fr}.insight-row{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,#fff 0%,#FCFDFE 100%);border-radius:20px;padding:24px;box-shadow:var(--sh);border:1px solid var(--border);animation:fadeUp .35s ease}
+.card-title{font-size:14px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:18px}
+.card-full{margin-bottom:18px}
+.chart-box{position:relative;height:360px}
+.chart-box.sm{height:260px}
+.chart-box.xs{height:180px}
+.rank-list{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;padding-right:4px}
+.rank-list::-webkit-scrollbar{width:6px}
+.rank-list::-webkit-scrollbar-thumb{background:#D7DEE8;border-radius:999px}
+.rank-item{display:grid;grid-template-columns:22px 30px 1fr 96px 42px;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--bg-soft);border:1px solid #EEF2F7;transition:all .2s ease}
+.rank-item:hover{background:#F2F6FB;transform:translateY(-1px)}
+.rank-pos{font-size:12px;font-weight:800;color:var(--muted);text-align:center;min-width:18px}
+.rank-img{width:30px;height:30px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.rank-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.25}
+.rank-pilar{display:inline-block;font-size:10px;font-weight:800;padding:2px 6px;border-radius:999px;text-transform:uppercase;margin-left:6px}
+.rank-bar-wrap{width:100%;height:8px;background:#E7EDF5;border-radius:999px;overflow:hidden}
+.rank-bar{height:100%;border-radius:999px;transition:width .6s ease}
+.rank-score{font-size:15px;font-weight:800;min-width:36px;text-align:right;color:var(--navy)}
+.heatmap-wrap{overflow-x:auto;margin-top:4px}
+.heatmap{border-collapse:separate;border-spacing:0 10px;width:100%;font-size:11px}
+.heatmap th{padding:6px 4px 10px;text-align:left;font-weight:800;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;background:transparent}
+.heatmap th.ods-col{text-align:center;min-width:48px}
+.heatmap td{padding:8px 4px;vertical-align:middle;background:#fff;border-top:1px solid #F0F3F8;border-bottom:1px solid #F0F3F8}
+.heatmap td:first-child{border-left:1px solid #F0F3F8;border-radius:14px 0 0 14px}
+.heatmap td:last-child{border-right:1px solid #F0F3F8;border-radius:0 14px 14px 0}
+.heatmap td.fac-name{font-size:11px;font-weight:800;color:var(--text);white-space:nowrap;padding-right:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.hm-cell{width:40px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin:0 auto;cursor:default;transition:transform .15s ease,box-shadow .15s ease}
+.hm-cell:hover{transform:scale(1.08);box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.hm-0{background:#F1F4F8;color:#B9C2CF}
+.footer{background:var(--navy);color:rgba(255,255,255,.68);text-align:center;padding:15px 20px;font-size:12px;line-height:1.6;border-top:1px solid rgba(255,255,255,.1);margin-top:10px}
+@media(max-width:780px){
+  .hdr{grid-template-columns:1fr;justify-items:start;text-align:left}
+  .hdr-right{justify-content:flex-start}
+  .hdr-logo{text-align:left;font-size:22px}
+  .filter-bar{top:156px}
+  .main{padding:24px 16px 40px}
+  .hero-title{font-size:24px}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-left">
+    <img class="hdr-img" src="https://obepe.org/wp-content/uploads/2026/03/LOGO-ASOCIADO-UARM-A-LA-CATEDRA-v-24-white-small.png" alt="UARM">
+  </div>
+  <div class="hdr-logo">Dashboard <span>ODS</span> UARM</div>
+  <div class="hdr-right">
+    <img class="hdr-img-right" src="https://obepe.org/wp-content/uploads/2026/03/Logo-Catedra-UNESCO-blanco.png" alt="Cátedra UNESCO">
+  </div>
+</header>
+
+<div class="filter-bar" id="filterBar" style="display:none">
+  <span class="filter-label">🏛 Facultad</span>
+  <div class="filter-chips" id="filterChips"></div>
+  <div class="filter-right">
+    <span class="last-upd" id="lastUpd"></span>
+    <button class="btn-refresh" onclick="loadData()">↺ Actualizar</button>
+  </div>
+</div>
+
+<div class="main" id="mainArea">
+  <div class="state-screen" id="stateScreen">
+    <div class="spinner-lg"></div>
+    <div class="state-title">Cargando datos…</div>
+    <div class="state-sub">Leyendo el Google Sheet de mapeos ODS.</div>
+  </div>
+  <div id="dashContent" style="display:none"></div>
+</div>
+
+<footer class="footer">
+  Diseñado por <strong style="color:rgba(255,255,255,.88)">Ander Alonso-Pastor</strong>. Coordinador de la Cátedra UNESCO en Políticas Educativas y Agenda 2030
+</footer>
+
+<script>
+const SHEET_ID  = '1b6ZGFfLkadUoTEhL7RBxRyfsSYR0Fb5IdUAykMCa8uA';
+const SHEET_GID = '0';
+const CSV_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
+
+const ODS = [
+  {id:1,  n:'Fin de la pobreza',                        p:'Sociedad', c:'#E5243B', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-01.png'},
+  {id:2,  n:'Hambre cero',                              p:'Sociedad', c:'#DDA63A', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-02.png'},
+  {id:3,  n:'Salud y bienestar',                        p:'Sociedad', c:'#4C9F38', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-03.png'},
+  {id:4,  n:'Educación de calidad',                     p:'Sociedad', c:'#C5192D', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-04.png'},
+  {id:5,  n:'Igualdad de género',                       p:'Sociedad', c:'#FF3A21', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-05.png'},
+  {id:6,  n:'Agua limpia y saneamiento',                p:'Biosfera', c:'#26BDE2', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-06.png'},
+  {id:7,  n:'Energía asequible y no contaminante',      p:'Sociedad', c:'#FCC30B', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-07.png'},
+  {id:8,  n:'Trabajo decente y crecimiento económico',  p:'Economía', c:'#A21942', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-08.png'},
+  {id:9,  n:'Industria, innovación e infraestructura',  p:'Economía', c:'#FD6925', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-09.png'},
+  {id:10, n:'Reducción de las desigualdades',           p:'Economía', c:'#DD1367', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-10.png'},
+  {id:11, n:'Ciudades y comunidades sostenibles',       p:'Sociedad', c:'#FD9D24', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-11.png'},
+  {id:12, n:'Producción y consumo responsables',        p:'Economía', c:'#BF8B2E', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-12.png'},
+  {id:13, n:'Acción por el clima',                      p:'Biosfera', c:'#3F7E44', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-13.png'},
+  {id:14, n:'Vida submarina',                           p:'Biosfera', c:'#0A97D9', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-14.png'},
+  {id:15, n:'Vida de ecosistemas terrestres',           p:'Biosfera', c:'#56C02B', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-15.png'},
+  {id:16, n:'Paz, justicia e instituciones sólidas',    p:'Sociedad', c:'#00689D', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-16.png'},
+  {id:17, n:'Alianzas para lograr los objetivos',       p:'Economía', c:'#19486A', img:'https://obepe.org/wp-content/uploads/2026/03/S_SDG-goals_icons-individual-rgb-17.png'},
+];
+const PAU = [
+  {id:1, n:'Mostrar el camino hacia Dios',      icon:'✨', color:'#7B3F00'},
+  {id:2, n:'Caminar con los excluidos',         icon:'🤝', color:'#1a3c5e'},
+  {id:3, n:'Acompañar a los jóvenes en camino', icon:'🌱', color:'#2d6a1f'},
+  {id:4, n:'Cuidar de nuestra casa común',      icon:'🌍', color:'#0a5c8c'},
+];
+const PILARES = [
+  {label:'Sociedad', color:'#1a6fab', ids:ODS.filter(o=>o.p==='Sociedad').map(o=>o.id)},
+  {label:'Biosfera', color:'#2d6a1f', ids:ODS.filter(o=>o.p==='Biosfera').map(o=>o.id)},
+  {label:'Economía', color:'#8a4f00', ids:ODS.filter(o=>o.p==='Economía').map(o=>o.id)},
+];
+
+let allRows=[], cols={}, filterFac='', charts={};
+
+function detectCols(fields){
+  const c={ods:{},pau:{}};
+  fields.forEach(f=>{
+    const fl=f.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if(/facultad|departamento/.test(fl)) c.facultad=f;
+    if(/docente|profesor/.test(fl))      c.docente=f;
+    if(/correo|email/.test(fl))          c.correo=f;
+    if(/curso|asignatura/.test(fl)&&!/carrera|cod/.test(fl)) c.curso=f;
+    if(/carrera/.test(fl))               c.carrera=f;
+    if(/semestre|periodo/.test(fl))      c.semestre=f;
+    const om=f.match(/ODS[_\s\-\[]*0?(\d+)/i); if(om){const n=parseInt(om[1]);if(n>=1&&n<=17)c.ods[n]=f;}
+    const pm=f.match(/PAU[_\s\-\[]*0?(\d+)/i); if(pm){const n=parseInt(pm[1]);if(n>=1&&n<=4)c.pau[n]=f;}
+  });
+  return c;
+}
+function colsOk(c){return c.facultad&&Object.keys(c.ods).length>=17&&Object.keys(c.pau).length>=4;}
+
+function loadData(){
+  showLoading();
+  Papa.parse(CSV_URL,{
+    download:true,header:true,skipEmptyLines:true,
+    complete(res){
+      if(!res.data||res.data.length===0) return showError('El Sheet no tiene datos o no es accesible.<br><small>Verifica que está compartido como "Cualquiera con el enlace puede ver".</small>');
+      const detected=detectCols(res.meta.fields||[]);
+      if(!colsOk(detected)) return showError('No se detectaron todas las columnas ODS/PAU.<br><small>Columnas: '+(res.meta.fields||[]).join(', ')+'</small>');
+      cols=detected; allRows=res.data; filterFac='';
+      document.getElementById('lastUpd').textContent='Actualizado: '+new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+      buildFilters(); renderDash();
+    },
+    error(err){showError('Error al leer el Sheet: '+err.message+'<br><small>Verifica que el Sheet es público.</small>');}
+  });
+}
+
+function rows(){return filterFac?allRows.filter(r=>(r[cols.facultad]||'').trim()===filterFac):allRows;}
+function odsAvg(rws){const res={};ODS.forEach(o=>{const vs=rws.map(r=>parseFloat(r[cols.ods[o.id]]||0)).filter(v=>!isNaN(v)&&v>0);res[o.id]=vs.length?parseFloat((vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(2)):0;});return res;}
+function pauAvg(rws){const res={};PAU.forEach(p=>{const vs=rws.map(r=>parseFloat(r[cols.pau[p.id]]||0)).filter(v=>!isNaN(v)&&v>0);res[p.id]=vs.length?parseFloat((vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(2)):0;});return res;}
+function pilarAvg(rws){return PILARES.map(p=>{const vs=[];p.ids.forEach(id=>rws.forEach(r=>{const v=parseFloat(r[cols.ods[id]]||0);if(!isNaN(v)&&v>0)vs.push(v);}));return{...p,avg:vs.length?parseFloat((vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(2)):0};});}
+function faculties(){return[...new Set(allRows.map(r=>(r[cols.facultad]||'').trim()).filter(Boolean))].sort();}
+function uniqDocs(rws){return new Set(rws.map(r=>(r[cols.correo]||r[cols.docente]||'').trim()).filter(Boolean)).size;}
+function hex2rgba(h,a){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return `rgba(${r},${g},${b},${a})`;}
+function killChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function buildFilters(){
+  const bar=document.getElementById('filterBar');
+  const chips=document.getElementById('filterChips');
+  bar.style.display='flex';
+  chips.innerHTML=chipBtn('Todas','',!filterFac);
+  faculties().forEach(f=>chips.innerHTML+=chipBtn(f,f,filterFac===f));
+}
+function chipBtn(label,val,active){return `<button class="fchip${active?' active':''}" onclick="setFilter(${JSON.stringify(val)})">${label}</button>`;}
+function setFilter(fac){filterFac=fac;buildFilters();renderDash();}
+
+function renderDash(){
+  const rws=rows(), avgs=odsAvg(rws), pavgs=pauAvg(rws);
+  const sorted=ODS.slice().sort((a,b)=>avgs[b.id]-avgs[a.id]);
+  const topODS=sorted[0];
+  const pilarData=pilarAvg(rws);
+  const pilarTop=[...pilarData].sort((a,b)=>b.avg-a.avg)[0];
+  const lowestODS=sorted[sorted.length-1];
+  ['radar','pilares','pau','facComp'].forEach(killChart);
+
+  const el=document.getElementById('dashContent');
+  document.getElementById('stateScreen').style.display='none';
+  el.style.display='block';
+
+  el.innerHTML=`
+    <div class="hero-card">
+      <div class="hero-kicker">Monitoreo curricular</div>
+      <div class="hero-title">Mapa institucional de integración de ODS y PAU</div>
+      <div class="hero-sub">Explora rápidamente qué objetivos aparecen con más fuerza, cómo se distribuyen por pilar y qué facultades concentran más presencia en la muestra actual.</div>
+      <div class="hero-meta">
+        <span class="hero-pill">${filterFac ? filterFac : 'Vista global'}</span>
+        <span class="hero-pill">ODS líder: ${topODS ? `ODS ${topODS.id}` : '—'}</span>
+        <span class="hero-pill">Pilar destacado: ${pilarTop ? pilarTop.label : '—'}</span>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi k1"><div class="kpi-icon">📋</div><div class="kpi-val">${rws.length}</div><div class="kpi-label">Mapeos enviados</div><div class="kpi-sub">${filterFac||'en total'}</div></div>
+      <div class="kpi k2"><div class="kpi-icon">👩‍🏫</div><div class="kpi-val">${uniqDocs(rws)}</div><div class="kpi-label">Docentes</div><div class="kpi-sub">participantes</div></div>
+      <div class="kpi k3"><div class="kpi-icon">🏛</div><div class="kpi-val">${filterFac?'1':faculties().length}</div><div class="kpi-label">Facultades</div><div class="kpi-sub">${filterFac||'representadas'}</div></div>
+      <div class="kpi k4"><div class="kpi-icon"><img src="${topODS.img}" style="width:24px;height:24px;border-radius:6px;vertical-align:middle"></div><div class="kpi-val" style="color:${topODS.c};font-size:34px">ODS ${topODS.id}</div><div class="kpi-label">Más puntuado</div><div class="kpi-sub">Prom. ${avgs[topODS.id].toFixed(2)}</div></div>
+    </div>
+
+    <div class="insight-row">
+      <div class="insight">
+        <div class="insight-label">Lectura rápida</div>
+        <div class="insight-value">${topODS.n}</div>
+        <div class="insight-sub">Es el objetivo con mejor puntuación promedio en la vista actual.</div>
+      </div>
+      <div class="insight">
+        <div class="insight-label">Pilar con mayor presencia</div>
+        <div class="insight-value">${pilarTop.label}</div>
+        <div class="insight-sub">Promedio agregado: ${pilarTop.avg.toFixed(2)}</div>
+      </div>
+      <div class="insight">
+        <div class="insight-label">ODS con menor presencia</div>
+        <div class="insight-value">ODS ${lowestODS.id}</div>
+        <div class="insight-sub">${lowestODS.n} · promedio ${avgs[lowestODS.id].toFixed(2)}</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🌐 Radar ODS — promedio global</div><div class="chart-box"><canvas id="cRadar"></canvas></div></div>
+      <div class="card"><div class="card-title">🏆 Ranking ODS</div><div class="rank-list" id="rankList"></div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card"><div class="card-title">📐 Promedio por Pilar</div><div class="chart-box sm"><canvas id="cPilares"></canvas></div></div>
+      <div class="card"><div class="card-title">✨ Prioridades Apostólicas (PAU)</div><div class="chart-box sm"><canvas id="cPAU"></canvas></div></div>
+    </div>
+
+    ${!filterFac&&faculties().length>1?`
+    <div class="card card-full">
+      <div class="card-title">🔥 Mapa de calor — ODS × Facultad <span style="font-size:10px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:8px">promedio de puntuaciones activas</span></div>
+      <div class="heatmap-wrap"><table class="heatmap" id="hmTable"></table></div>
+    </div>`:''}
+
+    ${filterFac?`
+    <div class="card card-full">
+      <div class="card-title">📊 ${filterFac} vs. Promedio global — ODS</div>
+      <div class="chart-box xs"><canvas id="cFacComp"></canvas></div>
+    </div>`:''}
+  `;
+
+  initRadar(avgs); initRanking(avgs,sorted); initPilares(rws); initPAU(pavgs);
+  if(!filterFac&&faculties().length>1) initHeatmap();
+  if(filterFac) initFacComp(avgs);
+}
+
+function radarPointLabel(label){
+  const parts=label.split(' ');
+  if(parts.length<=3) return label;
+  const midpoint=Math.ceil(parts.length/2);
+  return [parts.slice(0,midpoint).join(' '), parts.slice(midpoint).join(' ')];
+}
+
+function initRadar(avgs){
+  const scored=ODS.filter(o=>avgs[o.id]>0);
+  if(scored.length<3)return;
+  charts.radar=new Chart(document.getElementById('cRadar'),{
+    type:'radar',
+    data:{
+      labels:scored.map(o=>radarPointLabel(`${o.id}. ${o.n}`)),
+      datasets:[{
+        data:scored.map(o=>avgs[o.id]),
+        backgroundColor:'rgba(23,57,92,0.12)',
+        borderColor:'#17395C',
+        borderWidth:2.5,
+        pointBackgroundColor:scored.map(o=>o.c),
+        pointBorderColor:'#fff',
+        pointBorderWidth:2,
+        pointRadius:4.8,
+        pointHoverRadius:6
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#17395C',
+          titleFont:{family:'Outfit',weight:'700'},
+          bodyFont:{family:'Outfit'},
+          padding:10,
+          callbacks:{label:ctx=>` Promedio: ${Number(ctx.raw).toFixed(2)}`}
+        }
+      },
+      scales:{
+        r:{
+          min:0,
+          max:5,
+          ticks:{
+            stepSize:1,
+            font:{size:10},
+            color:'#6B7280',
+            backdropColor:'transparent'
+          },
+          pointLabels:{
+            color:'#4B5563',
+            font:{size:10,weight:'600'}
+          },
+          grid:{color:'rgba(107,114,128,0.18)'},
+          angleLines:{color:'rgba(107,114,128,0.18)'}
+        }
+      }
+    }
+  });
+}
+
+function initRanking(avgs,sorted){
+  const max=Math.max(...sorted.map(o=>avgs[o.id]),0.01);
+  const pc=p=>p==='Sociedad'?'#1a6fab':p==='Biosfera'?'#2d6a1f':'#8a4f00';
+  document.getElementById('rankList').innerHTML=sorted.map((o,i)=>`
+    <div class="rank-item">
+      <span class="rank-pos">${i+1}</span>
+      <img class="rank-img" src="${o.img}" alt="ODS ${o.id}">
+      <span class="rank-name">${o.n}<span class="rank-pilar" style="background:${pc(o.p)}22;color:${pc(o.p)}">${o.p}</span></span>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${(avgs[o.id]/max*100).toFixed(0)}%;background:${o.c}"></div></div>
+      <span class="rank-score" style="color:${avgs[o.id]>0?o.c:'#ccc'}">${avgs[o.id].toFixed(2)}</span>
+    </div>`).join('');
+}
+
+function initPilares(rws){
+  const data=pilarAvg(rws);
+  charts.pilares=new Chart(document.getElementById('cPilares'),{
+    type:'bar',
+    data:{
+      labels:data.map(p=>p.label),
+      datasets:[{
+        data:data.map(p=>p.avg),
+        backgroundColor:data.map(p=>hex2rgba(p.color,.16)),
+        borderColor:data.map(p=>p.color),
+        borderWidth:2,
+        borderRadius:10,
+        borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      scales:{
+        y:{min:0,max:5,ticks:{stepSize:1,font:{size:11}},grid:{color:'rgba(107,114,128,.12)'}},
+        x:{ticks:{font:{size:12,weight:'700'}},grid:{display:false}}
+      },
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' Promedio: '+ctx.raw.toFixed(2)}}}
+    }
+  });
+}
+
+function initPAU(pavgs){
+  charts.pau=new Chart(document.getElementById('cPAU'),{
+    type:'bar',
+    data:{
+      labels:PAU.map(p=>p.icon+' '+(p.n.length>30?p.n.slice(0,30)+'…':p.n)),
+      datasets:[{
+        data:PAU.map(p=>pavgs[p.id]),
+        backgroundColor:PAU.map(p=>hex2rgba(p.color,.16)),
+        borderColor:PAU.map(p=>p.color),
+        borderWidth:2,
+        borderRadius:10,
+        borderSkipped:false
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      maintainAspectRatio:false,
+      scales:{
+        x:{min:0,max:5,ticks:{stepSize:1,font:{size:11}},grid:{color:'rgba(107,114,128,.12)'}},
+        y:{ticks:{font:{size:11,weight:'600'}},grid:{display:false}}
+      },
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' Promedio: '+ctx.raw.toFixed(2)}}}
+    }
+  });
+}
+
+function initHeatmap(){
+  const facs=faculties();
+  const facAvgs=Object.fromEntries(facs.map(f=>[f,odsAvg(allRows.filter(r=>(r[cols.facultad]||'').trim()===f))]));
+  const tbl=document.getElementById('hmTable'); if(!tbl)return;
+  let html=`<thead><tr><th>Facultad</th>${ODS.map(o=>`<th class="ods-col" title="ODS ${o.id}: ${o.n}"><img src="${o.img}" style="width:20px;height:20px;border-radius:4px;display:block;margin:0 auto 2px"><span style="font-size:9px">${o.id}</span></th>`).join('')}</tr></thead><tbody>`;
+  facs.forEach(f=>{
+    const cnt=allRows.filter(r=>(r[cols.facultad]||'').trim()===f).length;
+    html+=`<tr><td class="fac-name" title="${f}">${f} <span style="color:var(--muted);font-weight:500">(${cnt})</span></td>${ODS.map(o=>{const v=facAvgs[f][o.id];if(!v)return`<td><div class="hm-cell hm-0" title="Sin datos">–</div></td>`;const op=0.12+(v/5)*0.72;return`<td><div class="hm-cell" style="background:${hex2rgba(o.c,op)};color:${v>=2.5?o.c:'#888'}" title="ODS ${o.id} · ${f}: ${v.toFixed(2)}">${v.toFixed(1)}</div></td>`;}).join('')}</tr>`;
+  });
+  tbl.innerHTML=html+'</tbody>';
+}
+
+function initFacComp(facAvgs){
+  const globalAvgs=odsAvg(allRows);
+  charts.facComp=new Chart(document.getElementById('cFacComp'),{
+    type:'bar',
+    data:{
+      labels:ODS.map(o=>'ODS '+o.id),
+      datasets:[
+        {
+          label:filterFac,
+          data:ODS.map(o=>facAvgs[o.id]),
+          backgroundColor:ODS.map(o=>hex2rgba(o.c,.62)),
+          borderColor:ODS.map(o=>o.c),
+          borderWidth:1,
+          borderRadius:6
+        },
+        {
+          label:'Promedio global',
+          data:ODS.map(o=>globalAvgs[o.id]),
+          type:'line',
+          tension:0.35,
+          borderColor:'#17395C',
+          borderWidth:2.5,
+          backgroundColor:'rgba(23,57,92,.06)',
+          pointBackgroundColor:'#17395C',
+          pointRadius:3,
+          fill:false
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      scales:{
+        y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(107,114,128,.12)'}},
+        x:{ticks:{font:{size:10}} ,grid:{display:false}}
+      },
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:11},padding:16}},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+parseFloat(ctx.raw||0).toFixed(2)}}
+      }
+    }
+  });
+}
+
+function showLoading(){
+  document.getElementById('dashContent').style.display='none';
+  document.getElementById('filterBar').style.display='none';
+  const s=document.getElementById('stateScreen');
+  s.style.display='flex';
+  s.innerHTML='<div class="spinner-lg"></div><div class="state-title">Cargando datos…</div><div class="state-sub">Leyendo el Google Sheet de mapeos ODS.</div>';
+}
+function showError(msg){
+  const s=document.getElementById('stateScreen');
+  s.style.display='flex';
+  s.innerHTML=`<div class="state-icon">⚠️</div><div class="state-title">No se pudieron cargar los datos</div><div class="state-sub">${msg}</div><button class="btn-retry" onclick="loadData()">↺ Reintentar</button>`;
+}
+
+loadData();
+</script>
+</body>
+</html>
